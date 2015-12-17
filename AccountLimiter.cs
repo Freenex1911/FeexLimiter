@@ -14,7 +14,7 @@ namespace Freenex.AccountLimiter
     public class AccountLimiter : RocketPlugin<AccountLimiterConfiguration>
     {
         public static AccountLimiter Instance;
-        int test = 1;
+
         protected override void Load()
         {
             Instance = this;
