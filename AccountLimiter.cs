@@ -1,5 +1,6 @@
 ﻿using Rocket.Core.Logging;
 using Rocket.Core.Plugins;
+using Rocket.Core.Steam;
 using Rocket.Unturned.Permissions;
 using SDG.Unturned;
 using System;
@@ -38,7 +39,7 @@ namespace Freenex.AccountLimiter
             WebClient WC = new WebClient();
 
             bool UserHasSetUpProfile = false;
-            bool accLimitOverwrite = false;
+            bool NonLimitedOverwrites = false;
 
             using (XmlReader xreader = XmlReader.Create(new StringReader(WC.DownloadString("http://steamcommunity.com/profiles/" + player + "?xml=1"))))
             {
@@ -46,22 +47,36 @@ namespace Freenex.AccountLimiter
                 {
                     if (xreader.IsStartElement())
                     {
-                        if (xreader.Name == "isLimitedAccount")
+                        if (xreader.Name == "vacBanned")
                         {
                             if (xreader.Read())
                             {
                                 if (xreader.Value == "1")
                                 {
-                                    if (Configuration.Instance.accKickLimited)
+                                    if (Configuration.Instance.accKickVACBannedAccounts)
+                                    {
+                                        rejectionReason = ESteamRejection.AUTH_VERIFICATION;
+                                    }
+                                }
+                                UserHasSetUpProfile = true;
+                            }
+                        }
+                        else if (xreader.Name == "isLimitedAccount")
+                        {
+                            if (xreader.Read())
+                            {
+                                if (xreader.Value == "1")
+                                {
+                                    if (Configuration.Instance.accKickLimitedAccounts)
                                     {
                                         rejectionReason = ESteamRejection.AUTH_VERIFICATION;
                                     }
                                 }
                                 else if (xreader.Value == "0")
                                 {
-                                    if (Configuration.Instance.accLimitOverwrite)
+                                    if (Configuration.Instance.accNonLimitedOverwrites)
                                     {
-                                        accLimitOverwrite = true;
+                                        NonLimitedOverwrites = true;
                                     }
                                 }
                                 UserHasSetUpProfile = true;
@@ -77,7 +92,7 @@ namespace Freenex.AccountLimiter
                                     MemberSince[1] = Regex.Match(MemberSince[1], @"\d+").Value;
                                     DateTime dtSteamUser = DateTime.ParseExact(MemberSince[1] + MemberSince[0] + MemberSince[2], "dMMMMyyyy", CultureInfo.InvariantCulture, DateTimeStyles.None);
                                     TimeSpan tsSteamUser = DateTime.Now - dtSteamUser;
-                                    if (tsSteamUser.Days <= Configuration.Instance.accMinimumDays)
+                                    if (tsSteamUser.Days <= Configuration.Instance.accMinimumDays && !NonLimitedOverwrites)
                                     {
                                         rejectionReason = ESteamRejection.AUTH_VERIFICATION;
                                     }
@@ -94,10 +109,11 @@ namespace Freenex.AccountLimiter
                 }
             }
 
-            if (!UserHasSetUpProfile && !accLimitOverwrite)
+            if (!UserHasSetUpProfile)
             {
                 rejectionReason = ESteamRejection.AUTH_VERIFICATION;
             }
+
         }
     }
 }

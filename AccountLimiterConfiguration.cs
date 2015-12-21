@@ -3,16 +3,16 @@ using System.Xml.Serialization;
 
 namespace Freenex.AccountLimiter
 {
-    public sealed class WhitelistSteamID
+    public sealed class Whitelist
     {
         [XmlAttribute("Steam64ID")]
         public string WhitelistUser;
 
-        public WhitelistSteamID(string steamid)
+        public Whitelist(string steamid)
         {
             WhitelistUser = steamid;
         }
-        public WhitelistSteamID()
+        public Whitelist()
         {
             WhitelistUser = string.Empty;
         }
@@ -21,21 +21,23 @@ namespace Freenex.AccountLimiter
     public class AccountLimiterConfiguration : IRocketPluginConfiguration
     {
         public int accMinimumDays;
-        public bool accLimitOverwrite;
-        public bool accKickLimited;
+        public bool accNonLimitedOverwrites;
+        public bool accKickVACBannedAccounts;
+        public bool accKickLimitedAccounts;
 
         [XmlArrayItem("WhitelistUser")]
         [XmlArray(ElementName = "Whitelist")]
-        public WhitelistSteamID[] Whitelist;
+        public Whitelist[] Whitelist;
 
         public void LoadDefaults()
         {
             accMinimumDays = 30;
-            accLimitOverwrite = true;
-            accKickLimited = false;
+            accNonLimitedOverwrites = true;
+            accKickVACBannedAccounts = false;
+            accKickLimitedAccounts = false;
 
-            Whitelist = new WhitelistSteamID[]{
-                new WhitelistSteamID("76561198187138313")
+            Whitelist = new Whitelist[]{
+                new Whitelist("76561198187138313")
             };
         }
     }
