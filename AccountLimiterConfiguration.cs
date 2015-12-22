@@ -24,6 +24,7 @@ namespace Freenex.AccountLimiter
         public bool accNonLimitedOverwrites;
         public bool accKickVACBannedAccounts;
         public bool accKickLimitedAccounts;
+        public string accRejectionReason;
 
         [XmlArrayItem("WhitelistUser")]
         [XmlArray(ElementName = "Whitelist")]
@@ -35,6 +36,7 @@ namespace Freenex.AccountLimiter
             accNonLimitedOverwrites = true;
             accKickVACBannedAccounts = false;
             accKickLimitedAccounts = false;
+            accRejectionReason = "AUTH_VERIFICATION";
 
             Whitelist = new Whitelist[]{
                 new Whitelist("76561198187138313")
