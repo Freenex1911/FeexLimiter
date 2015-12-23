@@ -91,7 +91,6 @@ namespace Freenex.AccountLimiter
                                         rejectionReason = GetSteamRejection();
                                     }
                                 }
-                                UserHasSetUpProfile = true;
                             }
                         }
                         else if (xreader.Name == "isLimitedAccount")
