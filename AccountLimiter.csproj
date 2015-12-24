@@ -45,15 +45,15 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Unturned Dev DLL's\Mono.Cecil.dll</HintPath>
     </Reference>
-    <Reference Include="Rocket.API, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Rocket.API, Version=2.1.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Unturned Dev DLL's\Rocket.API.dll</HintPath>
     </Reference>
-    <Reference Include="Rocket.Core, Version=2.0.2.1, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Rocket.Core, Version=2.0.3.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Unturned Dev DLL's\Rocket.Core.dll</HintPath>
     </Reference>
-    <Reference Include="Rocket.Unturned, Version=4.6.5.0, Culture=neutral, processorArchitecture=MSIL">
+    <Reference Include="Rocket.Unturned, Version=4.7.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\Unturned Dev DLL's\Rocket.Unturned.dll</HintPath>
     </Reference>
