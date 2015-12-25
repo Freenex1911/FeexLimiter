@@ -30,36 +30,15 @@ namespace Freenex.AccountLimiter
 
         public ESteamRejection GetSteamRejection()
         {
-            if (Configuration.Instance.accRejectionReason == "ALREADY_CONNECTED") { return ESteamRejection.ALREADY_CONNECTED; }
-            else if (Configuration.Instance.accRejectionReason == "ALREADY_PENDING") { return ESteamRejection.ALREADY_PENDING; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_ECON") { return ESteamRejection.AUTH_ECON; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_ELSEWHERE") { return ESteamRejection.AUTH_ELSEWHERE; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_LICENSE_EXPIRED") { return ESteamRejection.AUTH_LICENSE_EXPIRED; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_NO_STEAM") { return ESteamRejection.AUTH_NO_STEAM; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_NO_USER") { return ESteamRejection.AUTH_NO_USER; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_PUB_BAN") { return ESteamRejection.AUTH_PUB_BAN; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_TIMED_OUT") { return ESteamRejection.AUTH_TIMED_OUT; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_USED") { return ESteamRejection.AUTH_USED; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_VAC_BAN") { return ESteamRejection.AUTH_VAC_BAN; }
-            else if (Configuration.Instance.accRejectionReason == "AUTH_VERIFICATION") { return ESteamRejection.AUTH_VERIFICATION; }
-            else if (Configuration.Instance.accRejectionReason == "LATE_PENDING") { return ESteamRejection.LATE_PENDING; }
-            else if (Configuration.Instance.accRejectionReason == "NAME_CHARACTER_INVALID") { return ESteamRejection.NAME_CHARACTER_INVALID; }
-            else if (Configuration.Instance.accRejectionReason == "NAME_CHARACTER_LONG") { return ESteamRejection.NAME_CHARACTER_LONG; }
-            else if (Configuration.Instance.accRejectionReason == "NAME_CHARACTER_NUMBER") { return ESteamRejection.NAME_CHARACTER_NUMBER; }
-            else if (Configuration.Instance.accRejectionReason == "NAME_CHARACTER_SHORT") { return ESteamRejection.NAME_CHARACTER_SHORT; }
-            else if (Configuration.Instance.accRejectionReason == "NAME_PLAYER_INVALID") { return ESteamRejection.NAME_PLAYER_INVALID; }
-            else if (Configuration.Instance.accRejectionReason == "NAME_PLAYER_LONG") { return ESteamRejection.NAME_PLAYER_LONG; }
-            else if (Configuration.Instance.accRejectionReason == "NAME_PLAYER_NUMBER") { return ESteamRejection.NAME_PLAYER_NUMBER; }
-            else if (Configuration.Instance.accRejectionReason == "NAME_PLAYER_SHORT") { return ESteamRejection.NAME_PLAYER_SHORT; }
-            else if (Configuration.Instance.accRejectionReason == "NOT_PENDING") { return ESteamRejection.NOT_PENDING; }
-            else if (Configuration.Instance.accRejectionReason == "PING") { return ESteamRejection.PING; }
-            else if (Configuration.Instance.accRejectionReason == "PRO") { return ESteamRejection.PRO; }
-            else if (Configuration.Instance.accRejectionReason == "SERVER_FULL") { return ESteamRejection.SERVER_FULL; }
-            else if (Configuration.Instance.accRejectionReason == "WHITELISTED") { return ESteamRejection.WHITELISTED; }
-            else if (Configuration.Instance.accRejectionReason == "WRONG_HASH") { return ESteamRejection.WRONG_HASH; }
-            else if (Configuration.Instance.accRejectionReason == "WRONG_PASSWORD") { return ESteamRejection.WRONG_PASSWORD; }
-            else if (Configuration.Instance.accRejectionReason == "WRONG_VERSION") { return ESteamRejection.WRONG_VERSION; }
-            else { return ESteamRejection.AUTH_VERIFICATION; }
+            var RejectionReason = ESteamRejection.AUTH_VERIFICATION;
+
+            try
+            {
+                RejectionReason = (ESteamRejection)Enum.Parse(typeof(ESteamRejection), Configuration.Instance.accRejectionReason, true);
+            }
+            catch { }
+
+            return RejectionReason;
         }
 
         private void UnturnedPermissions_OnJoinRequested(Steamworks.CSteamID player, ref ESteamRejection? rejectionReason)
@@ -73,6 +52,7 @@ namespace Freenex.AccountLimiter
 
             bool UserHasSetUpProfile = false;
             bool NonLimitedOverwrites = false;
+            bool PrivateProfile = false;
 
             using (XmlReader xreader = XmlReader.Create(new StringReader(WC.DownloadString("http://steamcommunity.com/profiles/" + player + "?xml=1"))))
             {
@@ -80,16 +60,23 @@ namespace Freenex.AccountLimiter
                 {
                     if (xreader.IsStartElement())
                     {
-                        if (xreader.Name == "vacBanned")
+                        if (xreader.Name == "privacyState")
                         {
                             if (xreader.Read())
                             {
-                                if (xreader.Value == "1")
+                                if (xreader.Value == "private" && Configuration.Instance.accKickPrivateProfiles)
                                 {
-                                    if (Configuration.Instance.accKickVACBannedAccounts)
-                                    {
-                                        rejectionReason = GetSteamRejection();
-                                    }
+                                    PrivateProfile = true;
+                                }
+                            }
+                        }
+                        else if (xreader.Name == "vacBanned")
+                        {
+                            if (xreader.Read())
+                            {
+                                if (xreader.Value == "1" && Configuration.Instance.accKickVACBannedAccounts)
+                                {
+                                    rejectionReason = GetSteamRejection();
                                 }
                             }
                         }
@@ -99,17 +86,14 @@ namespace Freenex.AccountLimiter
                             {
                                 if (xreader.Value == "1")
                                 {
-                                    if (Configuration.Instance.accKickLimitedAccounts)
+                                    if (Configuration.Instance.accKickLimitedAccounts || PrivateProfile)
                                     {
                                         rejectionReason = GetSteamRejection();
                                     }
                                 }
-                                else if (xreader.Value == "0")
+                                else if (xreader.Value == "0" && Configuration.Instance.accNonLimitedOverwrites)
                                 {
-                                    if (Configuration.Instance.accNonLimitedOverwrites)
-                                    {
-                                        NonLimitedOverwrites = true;
-                                    }
+                                    NonLimitedOverwrites = true;
                                 }
                                 UserHasSetUpProfile = true;
                             }

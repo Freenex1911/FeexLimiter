@@ -22,6 +22,7 @@ namespace Freenex.AccountLimiter
     {
         public int accMinimumDays;
         public bool accNonLimitedOverwrites;
+        public bool accKickPrivateProfiles;
         public bool accKickVACBannedAccounts;
         public bool accKickLimitedAccounts;
         public string accRejectionReason;
@@ -34,6 +35,7 @@ namespace Freenex.AccountLimiter
         {
             accMinimumDays = 30;
             accNonLimitedOverwrites = true;
+            accKickPrivateProfiles = true;
             accKickVACBannedAccounts = false;
             accKickLimitedAccounts = false;
             accRejectionReason = "AUTH_VERIFICATION";
