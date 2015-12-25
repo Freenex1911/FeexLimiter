@@ -50,9 +50,10 @@ namespace Freenex.AccountLimiter
 
             WebClient WC = new WebClient();
 
-            bool UserHasSetUpProfile = false;
-            bool NonLimitedOverwrites = false;
-            bool PrivateProfile = false;
+            string privacyState = string.Empty;
+            string vacBanned = string.Empty;
+            string isLimitedAccount = string.Empty;
+            string memberSince = string.Empty;
 
             using (XmlReader xreader = XmlReader.Create(new StringReader(WC.DownloadString("http://steamcommunity.com/profiles/" + player + "?xml=1"))))
             {
@@ -62,74 +63,58 @@ namespace Freenex.AccountLimiter
                     {
                         if (xreader.Name == "privacyState")
                         {
-                            if (xreader.Read())
-                            {
-                                if (xreader.Value == "private" && Configuration.Instance.accKickPrivateProfiles)
-                                {
-                                    PrivateProfile = true;
-                                }
-                            }
+                            if (xreader.Read()) { privacyState = xreader.Value; }
                         }
                         else if (xreader.Name == "vacBanned")
                         {
-                            if (xreader.Read())
-                            {
-                                if (xreader.Value == "1" && Configuration.Instance.accKickVACBannedAccounts)
-                                {
-                                    rejectionReason = GetSteamRejection();
-                                }
-                            }
+                            if (xreader.Read()) { vacBanned = xreader.Value; }
                         }
                         else if (xreader.Name == "isLimitedAccount")
                         {
-                            if (xreader.Read())
-                            {
-                                if (xreader.Value == "1")
-                                {
-                                    if (Configuration.Instance.accKickLimitedAccounts || PrivateProfile)
-                                    {
-                                        rejectionReason = GetSteamRejection();
-                                    }
-                                }
-                                else if (xreader.Value == "0" && Configuration.Instance.accNonLimitedOverwrites)
-                                {
-                                    NonLimitedOverwrites = true;
-                                }
-                                UserHasSetUpProfile = true;
-                            }
+                            if (xreader.Read()) { isLimitedAccount = xreader.Value; }
                         }
                         else if (xreader.Name == "memberSince")
                         {
-                            if (xreader.Read())
-                            {
-                                try
-                                {
-                                    string[] MemberSince = xreader.Value.Split(' ');
-                                    MemberSince[1] = Regex.Match(MemberSince[1], @"\d+").Value;
-                                    DateTime dtSteamUser = DateTime.ParseExact(MemberSince[1] + MemberSince[0] + MemberSince[2], "dMMMMyyyy", CultureInfo.InvariantCulture, DateTimeStyles.None);
-                                    TimeSpan tsSteamUser = DateTime.Now - dtSteamUser;
-                                    if (tsSteamUser.Days <= Configuration.Instance.accMinimumDays && !NonLimitedOverwrites)
-                                    {
-                                        rejectionReason = GetSteamRejection();
-                                    }
-                                }
-                                catch
-                                {
-                                    Logger.LogWarning("DateTimeParseError: " + player + " // " + xreader.Value);
-                                }
-                                UserHasSetUpProfile = true;
-                                xreader.Close();
-                            }
+                            if (xreader.Read()) { memberSince = xreader.Value; }
                         }
                     }
                 }
             }
 
-            if (!UserHasSetUpProfile)
-            {
-                rejectionReason = GetSteamRejection();
-            }
+            if (isLimitedAccount == string.Empty) { rejectionReason = GetSteamRejection(); return; }
 
+            if (privacyState == "private" && Configuration.Instance.accKickPrivateProfiles)
+            {
+                if (Configuration.Instance.accNonLimitedOverwrites)
+                {
+                    if (isLimitedAccount == "1") { rejectionReason = GetSteamRejection(); return; }
+                }
+                else { rejectionReason = GetSteamRejection(); return; }
+            }
+            if (vacBanned == "1" && Configuration.Instance.accKickVACBannedAccounts) { rejectionReason = GetSteamRejection(); return; }
+            if (isLimitedAccount == "1" && Configuration.Instance.accKickLimitedAccounts) { rejectionReason = GetSteamRejection(); return; }
+            if (memberSince != string.Empty)
+            {
+                try
+                {
+                    string[] MemberSince = memberSince.Split(' ');
+                    MemberSince[1] = Regex.Match(MemberSince[1], @"\d+").Value;
+                    DateTime dtSteamUser = DateTime.ParseExact(MemberSince[1] + MemberSince[0] + MemberSince[2], "dMMMMyyyy", CultureInfo.InvariantCulture, DateTimeStyles.None);
+                    TimeSpan tsSteamUser = DateTime.Now - dtSteamUser;
+                    if (tsSteamUser.Days <= Configuration.Instance.accMinimumDays)
+                    {
+                        if (Configuration.Instance.accNonLimitedOverwrites)
+                        {
+                            if (isLimitedAccount == "1") { rejectionReason = GetSteamRejection(); return; }
+                        }
+                        else { rejectionReason = GetSteamRejection(); return; }
+                    }
+                }
+                catch
+                {
+                    Logger.LogWarning("DateTimeParseError: " + player + " // " + memberSince);
+                }
+            }
         }
     }
 }
