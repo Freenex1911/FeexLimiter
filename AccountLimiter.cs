@@ -45,9 +45,14 @@ namespace Freenex.AccountLimiter
         {
             for (int i = 0; i < Configuration.Instance.Whitelist.Length; i++)
             {
-                if (Configuration.Instance.Whitelist[i].WhitelistUser == player.ToString()) { return; }
+                if (Configuration.Instance.Whitelist[i].WhitelistUser == player.ToString())
+                {
+                    if (Configuration.Instance.Logging) { Logger.LogWarning("Access granted: " + player + " // Reason: Whitelist."); }
+                    return;
+                }
             }
 
+            string steamID = string.Empty;
             string privacyState = string.Empty;
             string vacBanned = string.Empty;
             string isLimitedAccount = string.Empty;
@@ -60,31 +65,33 @@ namespace Freenex.AccountLimiter
                 using (var WRresponse = WR.GetResponse())
                 using (var WRstream = WRresponse.GetResponseStream())
                 using (var sreader = new StreamReader(WRstream))
+                using (XmlReader xreader = XmlReader.Create(new StringReader(sreader.ReadToEnd())))
                 {
-                    using (XmlReader xreader = XmlReader.Create(new StringReader(sreader.ReadToEnd())))
+                    while (xreader.Read())
                     {
-                        while (xreader.Read())
+                        if (xreader.IsStartElement())
                         {
-                            if (xreader.IsStartElement())
+                            if (xreader.Name == "steamID")
                             {
-                                if (xreader.Name == "privacyState")
-                                {
-                                    if (xreader.Read()) { privacyState = xreader.Value; }
-                                }
-                                else if (xreader.Name == "vacBanned")
-                                {
-                                    if (xreader.Read()) { vacBanned = xreader.Value; }
-                                }
-                                else if (xreader.Name == "isLimitedAccount")
-                                {
-                                    if (xreader.Read()) { isLimitedAccount = xreader.Value; }
-                                    if (privacyState == "private") { xreader.Close(); }
-                                }
-                                else if (xreader.Name == "memberSince")
-                                {
-                                    if (xreader.Read()) { memberSince = xreader.Value; }
-                                    xreader.Close();
-                                }
+                                if (xreader.Read()) { steamID = xreader.Value; }
+                            }
+                            else if (xreader.Name == "privacyState")
+                            {
+                                if (xreader.Read()) { privacyState = xreader.Value; }
+                            }
+                            else if (xreader.Name == "vacBanned")
+                            {
+                                if (xreader.Read()) { vacBanned = xreader.Value; }
+                            }
+                            else if (xreader.Name == "isLimitedAccount")
+                            {
+                                if (xreader.Read()) { isLimitedAccount = xreader.Value; }
+                                if (privacyState == "private" || privacyState == "friendsonly") { xreader.Close(); }
+                            }
+                            else if (xreader.Name == "memberSince")
+                            {
+                                if (xreader.Read()) { memberSince = xreader.Value; }
+                                xreader.Close();
                             }
                         }
                     }
@@ -111,36 +118,39 @@ namespace Freenex.AccountLimiter
                 return;
             }
 
-            if (privacyState == "private" && Configuration.Instance.accKickPrivateProfiles)
+            if (privacyState == "private" || privacyState == "friendsonly" && Configuration.Instance.accKickPrivateProfiles)
             {
                 if (Configuration.Instance.accNonLimitedOverwrites)
                 {
                     if (isLimitedAccount == "1")
                     {
-                        if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " // Reason: Private profile."); }
+                        if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " (" + steamID + ") // Reason: Private profile."); }
                         rejectionReason = GetSteamRejection();
                         return;
                     }
                 }
                 else
                 {
-                    if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " // Reason: Private profile."); }
+                    if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " (" + steamID + ") // Reason: Private profile."); }
                     rejectionReason = GetSteamRejection();
                     return;
                 }
             }
+
             if (vacBanned == "1" && Configuration.Instance.accKickVACBannedAccounts)
             {
-                if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " // Reason: VAC banned."); }
+                if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " (" + steamID + ") // Reason: VAC banned."); }
                 rejectionReason = GetSteamRejection();
                 return;
             }
+
             if (isLimitedAccount == "1" && Configuration.Instance.accKickLimitedAccounts)
             {
-                if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " // Reason: Limited account."); }
+                if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " (" + steamID + ") // Reason: Limited account."); }
                 rejectionReason = GetSteamRejection();
                 return;
             }
+
             if (memberSince != string.Empty)
             {
                 try
@@ -155,25 +165,22 @@ namespace Freenex.AccountLimiter
                         {
                             if (isLimitedAccount == "1")
                             {
-                                if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " // Reason: Account too young."); }
+                                if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " (" + steamID + ") // Reason: Account too new."); }
                                 rejectionReason = GetSteamRejection();
                                 return;
                             }
                         }
                         else
                         {
-                            if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " // Reason: Account too young."); }
+                            if (Configuration.Instance.Logging) { Logger.LogWarning("Access denied: " + player + " (" + steamID + ") // Reason: Account too new."); }
                             rejectionReason = GetSteamRejection();
                             return;
                         }
                     }
                 }
-                catch
-                {
-                    Logger.LogWarning("DateTimeParseError: " + player + " // " + memberSince);
-                }
+                catch (Exception ex) { Logger.LogException(ex); }
             }
-        }
 
+        }
     }
 }
