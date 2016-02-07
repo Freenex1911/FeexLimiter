@@ -9,23 +9,23 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Xml;
 
-namespace Freenex.AccountLimiter
+namespace Freenex.FeexLimiter
 {
-    public class AccountLimiter : RocketPlugin<AccountLimiterConfiguration>
+    public class FeexLimiter : RocketPlugin<FeexLimiterConfiguration>
     {
-        public static AccountLimiter Instance;
+        public static FeexLimiter Instance;
 
         protected override void Load()
         {
             Instance = this;
             UnturnedPermissions.OnJoinRequested += UnturnedPermissions_OnJoinRequested;
-            Logger.Log("Freenex's AccountLimiter has been loaded!");
+            Logger.Log("Freenex's FeexLimiter has been loaded!");
         }
 
         protected override void Unload()
         {
             UnturnedPermissions.OnJoinRequested -= UnturnedPermissions_OnJoinRequested;
-            Logger.Log("Freenex's AccountLimiter has been unloaded!");
+            Logger.Log("Freenex's FeexLimiter has been unloaded!");
         }
 
         public ESteamRejection GetSteamRejection()
@@ -118,7 +118,7 @@ namespace Freenex.AccountLimiter
                 return;
             }
 
-            if (privacyState == "private" || privacyState == "friendsonly" && Configuration.Instance.accKickPrivateProfiles)
+            if ((privacyState == "private" || privacyState == "friendsonly") && Configuration.Instance.accKickPrivateProfiles)
             {
                 if (Configuration.Instance.accNonLimitedOverwrites)
                 {

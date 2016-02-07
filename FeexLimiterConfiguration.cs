@@ -1,7 +1,7 @@
 ﻿using Rocket.API;
 using System.Xml.Serialization;
 
-namespace Freenex.AccountLimiter
+namespace Freenex.FeexLimiter
 {
     public sealed class Whitelist
     {
@@ -18,7 +18,7 @@ namespace Freenex.AccountLimiter
         }
     }
 
-    public class AccountLimiterConfiguration : IRocketPluginConfiguration
+    public class FeexLimiterConfiguration : IRocketPluginConfiguration
     {
         public int accMinimumDays;
         public bool accKickPrivateProfiles;
