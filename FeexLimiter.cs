@@ -180,7 +180,6 @@ namespace Freenex.FeexLimiter
                 }
                 catch (Exception ex) { Logger.LogException(ex); }
             }
-
         }
     }
 }
