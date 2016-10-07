@@ -1,2 +1,2 @@
 # FeexLimiter
-Limit accounts who are trying to connect to your server.
+Limit accounts which are trying to connect to your server.
